@@ -1,5 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Quill from 'quill';
+import io from 'socket.io-client';
 import 'quill/dist/quill.snow.css';
 import 'components/TextEditor/styles.css';
 
@@ -16,6 +17,49 @@ const toolbarOptions = [
 ];
 
 const TextEditor = () => {
+  const [socket, setSocket] = useState();
+  const [quill, setQuill] = useState();
+
+  useEffect(() => {
+    const socket = io('http://localhost:3001');
+
+    setSocket(socket);
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!socket || !quill) return;
+
+    const handleTextChange = (delta, oldDelta, source) => {
+      if (source !== 'user') return;
+
+      socket.emit('send-changes', delta);
+    };
+
+    quill.on('text-change', handleTextChange);
+
+    return () => {
+      quill.off('text-change', handleTextChange);
+    };
+  }, [socket, quill]);
+
+  useEffect(() => {
+    if (!socket || !quill) return;
+
+    const handleChangesReceive = (changes) => {
+      quill.updateContents(changes);
+    };
+
+    socket.on('receive-changes', handleChangesReceive);
+
+    return () => {
+      socket.off('receive-change', handleChangesReceive);
+    };
+  }, [socket, quill]);
+
   const wrapperRef = useCallback((wrapper) => {
     if (!wrapper) return;
 
@@ -24,12 +68,14 @@ const TextEditor = () => {
     wrapper.innerHTML = '';
     wrapper.append(editor);
 
-    new Quill(editor, {
+    const quill = new Quill(editor, {
       theme: 'snow',
       modules: {
         toolbar: toolbarOptions,
       },
     });
+
+    setQuill(quill);
   }, []);
 
   return (
