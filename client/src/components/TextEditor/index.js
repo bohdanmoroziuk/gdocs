@@ -74,6 +74,18 @@ const TextEditor = () => {
     socket.emit('get-document', documentId);
   }, [socket, quill, documentId]);
 
+  useEffect(() => {
+    if (!socket || !quill) return;
+
+    const interval = setInterval(() => {
+      socket.emit('save-document', quill.getContents());
+    }, 2000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [socket, quill]);
+
   const wrapperRef = useCallback((wrapper) => {
     if (!wrapper) return;
 
