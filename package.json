@@ -4,8 +4,9 @@
   "description": "Google Docs Clone",
   "main": "main.js",
   "scripts": {
-    "start": "node main.js",
-    "serve": "nodemon main.js"
+    "start:client": "npm start --prefix client",
+    "start:server": "node main.js",
+    "serve:server": "nodemon main.js"
   },
   "repository": {
     "type": "git",
